@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="postgres@buketti-azure-function-test-db.postgres.database.azure.com" uuid="d1fabd77-80f6-45cc-95fd-328b351e504c">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://buketti-azure-function-test-db.postgres.database.azure.com:5432/postgres?ssl=true&amp;sslmode=require</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="AZURE_SQL_DB_SERVER" value="/subscriptions/d6ef3f53-2e55-4fd6-9f21-6cde92e531ee/resourceGroups/test/providers/Microsoft.DBforPostgreSQL/flexibleServers/buketti-azure-function-test-db" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>
