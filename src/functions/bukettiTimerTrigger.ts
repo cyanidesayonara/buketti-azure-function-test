@@ -96,6 +96,6 @@ const queryDatabase = async (client) => {
 };
 
 app.timer('bukettiTimerTrigger', {
-  schedule: "* * * * *",
+  schedule: process.env["CRON_SCHEDULE"],
   handler: bukettiTimerTrigger
 });
