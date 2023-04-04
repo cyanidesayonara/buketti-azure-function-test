@@ -3,17 +3,15 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { v4 } from 'uuid';
 const pg = require('pg');
 
-require('dotenv').config()
-
-const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.BLOB_CONNECTION_STRING);
-const containerClient = blobServiceClient.getContainerClient(process.env.BLOB_CONTAINER_NAME);
+const blobServiceClient = BlobServiceClient.fromConnectionString(process.env["BLOB_CONNECTION_STRING"]);
+const containerClient = blobServiceClient.getContainerClient(process.env["BLOB_CONTAINER_NAME"]);
 
 export const bukettiTimerTrigger = async (myTimer: Timer, context: InvocationContext): Promise<void> => {
   const config = {
-    host: process.env.POSTGRES_HOST,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB,
+    host: process.env["POSTGRES_HOST"],
+    user: process.env["POSTGRES_USER"],
+    password: process.env["POSTGRES_PASSWORD"],
+    database: process.env["POSTGRES_DB"],
     port: 5432,
     ssl: true
   };
@@ -33,10 +31,10 @@ export const bukettiTimerTrigger = async (myTimer: Timer, context: InvocationCon
 };
 
 const uploadDataToAzure = async (data) => {
-  const filename = `uploaded-data-${v4()}`;
+  const filename = `uploaded-data-${v4()}.json`;
   const blockBlobClient = containerClient.getBlockBlobClient(filename);
-  const response = await blockBlobClient.upload(JSON.stringify(data), data.length);
-  console.log(`Uploaded data ${JSON.stringify(data)} as ${filename}`);
+  const response = await blockBlobClient.upload(data, data.length);
+  console.log(`Uploaded data ${data} as ${filename}`);
   if (response._response.status !== 201) {
     throw new Error(
       `Error uploading document ${blockBlobClient.name} to container ${blockBlobClient.containerName}`
@@ -71,7 +69,9 @@ const queryDatabase = async (client) => {
   const query = 'SELECT * FROM inventory;';
   return await client.query(query)
     .then(res => {
-      return res.rows;
+      const data = JSON.stringify(res.rows);
+      console.log(`Found data ${data}`);
+      return data;
     })
     .catch(err => {
       console.log(err);
@@ -79,6 +79,6 @@ const queryDatabase = async (client) => {
 };
 
 app.timer('bukettiTimerTrigger', {
-  schedule: '* * * * *',
+  schedule: "* * * * *",
   handler: bukettiTimerTrigger
 });
