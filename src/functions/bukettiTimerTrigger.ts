@@ -21,7 +21,7 @@ export const bukettiTimerTrigger = async (myTimer: Timer, context: InvocationCon
   client.connect(async err => {
     if (err) throw err;
     else {
-      // createDatabase(client);
+      await createDatabase(client);
       const rows = await queryDatabase(client);
       await uploadDataToAzure(rows);
     }
@@ -42,27 +42,44 @@ const uploadDataToAzure = async (data) => {
   }
 };
 
-// const createDatabase = (client) => {
-//   const query = `
-//     DROP TABLE IF EXISTS inventory;
-//     CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);
-//     INSERT INTO inventory (name, quantity) VALUES ('banana', 150);
-//     INSERT INTO inventory (name, quantity) VALUES ('orange', 154);
-//     INSERT INTO inventory (name, quantity) VALUES ('apple', 100);
-//   `;
-//
-//   client
-//     .query(query)
-//     .then(() => {
-//       console.log('Table created successfully!');
-//       client.end();
-//     })
-//     .catch(err => console.log(err))
-//     .then(() => {
-//       console.log('Finished execution, exiting now');
-//       process.exit();
-//     });
-// };
+const createDatabase = async (client) => {
+  let query;
+  // ~50-50 chance of values changing (triggers blob storage update)
+  if (Math.random() < 0.5) {
+    query = `
+      DROP TABLE IF EXISTS inventory;
+      CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);
+      INSERT INTO inventory (name, quantity) VALUES ('bananas', 123);
+      INSERT INTO inventory (name, quantity) VALUES ('apples', 456);
+      INSERT INTO inventory (name, quantity) VALUES ('oranges', 789);
+    `;
+  } else {
+    const bananas = Math.floor(Math.random() * 100);
+    const apples = Math.floor(Math.random() * 100);
+    const oranges = Math.floor(Math.random() * 100);
+    query = `
+      DROP TABLE IF EXISTS inventory;
+      CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);
+      INSERT INTO inventory (name, quantity) VALUES ('bananas', ${bananas});
+      INSERT INTO inventory (name, quantity) VALUES ('apples', ${apples});
+      INSERT INTO inventory (name, quantity) VALUES ('oranges', ${oranges});
+    `;
+  }
+
+  await client
+    .query(query)
+    .catch(err => console.log(err));
+
+  query = 'SELECT * FROM inventory;';
+  return await client.query(query)
+    .then(res => {
+      const data = JSON.stringify(res.rows);
+      console.log(`Table created with data ${data}`);
+    })
+    .catch(err => {
+      console.log(err);
+    });
+};
 
 const queryDatabase = async (client) => {
   console.log(`Running query to PostgreSQL server`);
