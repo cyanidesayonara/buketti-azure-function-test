@@ -47,3 +47,10 @@ Go to: https://portal.azure.com/#home -> Storage account -> Access keys - Connec
 * The function app can be deployed as a zip file from command line. Follow these instructions: https://learn.microsoft.com/en-us/azure/azure-functions/deployment-zip-push
 * The app can also easily be deployed with a Visual Studio Code extension: https://learn.microsoft.com/en-us/azure/azure-functions/functions-develop-vs-code
 
+## Continuous deployment
+
+* The most natural way to host a repository and create pipelines is with Azure 
+DevOps: https://learn.microsoft.com/en-us/azure/app-service/deploy-azure-pipelines
+* GitHub has been tested and works.
+* Using GitLab pipelines should also be possible, but remains untested: 
+https://dev.to/alandecastros/gitlab-ci-script-to-deploy-a-azure-function-3gc4
