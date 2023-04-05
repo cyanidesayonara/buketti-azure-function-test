@@ -1,6 +1,5 @@
 import { app, InvocationContext, Timer } from "@azure/functions";
 import { BlobServiceClient } from "@azure/storage-blob";
-import { v4 } from 'uuid';
 const pg = require('pg');
 
 const blobServiceClient = BlobServiceClient.fromConnectionString(process.env["BLOB_CONNECTION_STRING"]);
@@ -31,10 +30,59 @@ export const bukettiTimerTrigger = async (myTimer: Timer, context: InvocationCon
 };
 
 const uploadDataToAzure = async (data) => {
-  const filename = `uploaded-data-${v4()}.json`;
+  const latestBlobFilename = await getLatestBlobFilename();
+
+  if (latestBlobFilename) {
+    const latestBlobContent = await getLatestBlobContent(latestBlobFilename);
+    if (data != latestBlobContent) {
+      console.log("Data has changed, uploading...");
+      await uploadData(data);
+    } else {
+      console.log("Data has not changed, skipping upload...");
+    }
+  } else {
+    console.log("No data in blob storage, uploading...");
+    await uploadData(data);
+  }
+};
+
+const streamToBuffer = async (readableStream) => {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on('data', (data) => {
+      chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+    });
+    readableStream.on('end', () => resolve(Buffer.concat(chunks)));
+    readableStream.on('error', reject);
+  });
+};
+
+const getLatestBlobFilename = async () => {
+  const blobs = [];
+  for await (const blob of containerClient.listBlobsFlat()) {
+    blobs.push(blob);
+  }
+  if (blobs.length) {
+    blobs.sort().reverse();
+    return blobs[0].name;
+  } else {
+    return '';
+  }
+};
+
+const getLatestBlobContent = async (latestBlobFilename) => {
+  const blockBlobClient = containerClient.getBlockBlobClient(latestBlobFilename);
+  const downloadResponse = await blockBlobClient.download();
+  const downloaded = await streamToBuffer(downloadResponse.readableStreamBody);
+  return downloaded.toString();
+};
+
+const uploadData = async (data) => {
+  const filename = `uploaded-data-${Math.round(Date.now() / 1000)}.json`;
   const blockBlobClient = containerClient.getBlockBlobClient(filename);
   const response = await blockBlobClient.upload(data, data.length);
   console.log(`Uploaded data ${data} as ${filename}`);
+
   if (response._response.status !== 201) {
     throw new Error(
       `Error uploading document ${blockBlobClient.name} to container ${blockBlobClient.containerName}`
